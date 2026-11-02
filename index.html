@@ -284,6 +284,29 @@ svg,img{-webkit-user-drag:none;user-drag:none}
 .rb svg{width:28px;height:20px}
 .rb b{line-height:1.1;text-align:center}
 #msg{font-size:15px}
+/* 角ボタンを0.8倍に */
+.corner{width:160px;height:160px}
+.corner.bl{left:-51px;bottom:-51px}
+.corner.br{right:-51px;bottom:-51px}
+.corner::before{inset:11px;border-width:2.5px}
+.corner .cin{top:56px;width:80px;gap:3px}
+.corner.bl .cin{left:104px}
+.corner.br .cin{left:56px}
+.corner .cin svg{width:35px;height:35px}
+.corner .cin b{font-size:11px}
+body.hub #app{padding-bottom:130px}
+/* 部屋は10%小さく（横幅の90%の正方形） */
+.room.tall{width:90%;margin:6px auto}
+/* 名前ボタン・ダイアログ */
+.nmb{width:auto;max-width:100%;margin:2px auto 6px;padding:4px 12px;font-size:14px;display:inline-flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nmb svg{width:16px;height:16px;flex:none}
+.dlg{position:absolute;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:rgba(40,20,35,.55);backdrop-filter:blur(3px);animation:enter .25s}
+.dbox{width:min(88%,360px);background:var(--card);border:3px solid var(--line);border-radius:22px;padding:18px 18px 14px;text-align:center;box-shadow:0 12px 30px rgba(0,0,0,.35)}
+.dbox h2{margin:0 0 8px;font-size:20px;text-align:center}
+.dbox p{margin:6px 0;font-size:16px;line-height:1.6;min-height:0}
+.dbox .dp{width:70px;margin:0 auto 6px}
+.dbtns{display:flex;gap:10px;margin-top:12px}
+.dbtns button{margin:0;font-size:17px;padding:12px 8px}
 @keyframes bob{50%{transform:translateY(-10px)}}
 @keyframes pulse{50%{transform:scale(1.25)}}
 @keyframes flipin{from{transform:scaleX(0)}to{transform:none}}
@@ -766,7 +789,7 @@ function pet(p){
 }
 function room(cls){
   const r=R();
-  return `<div class="room ${cls||''}"><div class="rtag">${save.ri+1}号室</div><div class="wall" style="background:${WALL[r.wall]}"></div><div class="floor" style="background:${FLOOR[r.floor]}"></div>${r.deco.map(id=>{const q=DPOS[id];return `<span class="deco" style="left:${q[0]}%;bottom:${q[1]}%"><svg viewBox="0 0 40 40">${DECO[id]}</svg></span>`}).join('')}<div class="petw" id="petw"><div id="pet" class="m-n"></div></div></div>`;
+  return `<div class="room ${cls||''}"><div class="rtag">${save.ri+1}号室${r.pet&&r.pet.name?'・'+esc(r.pet.name):''}</div><div class="wall" style="background:${WALL[r.wall]}"></div><div class="floor" style="background:${FLOOR[r.floor]}"></div>${r.deco.map(id=>{const q=DPOS[id];return `<span class="deco" style="left:${q[0]}%;bottom:${q[1]}%"><svg viewBox="0 0 40 40">${DECO[id]}</svg></span>`}).join('')}<div class="petw" id="petw"><div id="pet" class="m-n"></div></div></div>`;
 }
 Object.assign(I,{
  gacha:'<svg viewBox="0 0 56 56"><circle cx="28" cy="22" r="16" fill="#e9f7ff" stroke="#6cc6ff" stroke-width="2.5"/><circle cx="22" cy="24" r="5" fill="#ff8fb8"/><circle cx="33" cy="26" r="5" fill="#ffe45e"/><circle cx="28" cy="15" r="5" fill="#9be58a"/><rect x="12" y="36" width="32" height="14" rx="5" fill="#f0558d"/><rect x="22" y="41" width="12" height="6" rx="2" fill="#fff"/></svg>',
@@ -839,6 +862,7 @@ Object.assign(I,{
  pad:'<svg viewBox="0 0 48 48"><path d="M10 16h28q6 0 8 8l2 10q1 6-5 6-4 0-6-4l-2-3H13l-2 3q-2 4-6 4-6 0-5-6l2-10q2-8 8-8z" fill="#fff"/><path d="M15 22v8M11 26h8" stroke="#3a8fc8" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="24" r="2.5" fill="#3a8fc8"/><circle cx="37" cy="28" r="2.5" fill="#3a8fc8"/></svg>',
  gem:'<svg viewBox="0 0 48 48"><path d="M12 10h24l8 10-20 22L4 20z" fill="#fff"/><path d="M4 20h40M16 10l-4 10 12 22M32 10l4 10-12 22" stroke="#f0558d" stroke-width="2.5" fill="none" stroke-linejoin="round"/></svg>',
  leaf:`<svg ${S}><path d="M4 20C4 9 10 4 21 3c0 11-5 17-17 17z" fill="#6fcf97"/><path d="M4 20L14 10" stroke="#2a9d8f" stroke-width="2" stroke-linecap="round"/></svg>`});
+I.pen=`<svg ${S} ${L} stroke-width="2.5"><path d="M4 20l1-5L16 4l4 4L9 19z"/></svg>`;
 SE.pop=()=>osc(520,.12,'triangle',.16,0,900);
 /* 角の円形ボタンから飛び出すメニュー */
 let popOpen=null;
@@ -853,7 +877,7 @@ function closePop(now){
 }
 function openPop(which){
   closePop(true);
-  const items=POP[which](),W=document.body.clientWidth||window.innerWidth,H=document.body.clientHeight||window.innerHeight,lf=which=='bl',cx=lf?26:W-26,cy=H-26,r=Math.min(250,Math.max(175,Math.min(W,H)*.52)),n=items.length;
+  const items=POP[which](),W=document.body.clientWidth||window.innerWidth,H=document.body.clientHeight||window.innerHeight,lf=which=='bl',cx=lf?29:W-29,cy=H-29,r=Math.min(250,Math.max(175,Math.min(W,H)*.52)),n=items.length;
   const ov=document.createElement('div');ov.className='pop';ov.id='pop';
   items.forEach((it,i)=>{
     const a=(n==1?45:8+(74/(n-1))*i)*Math.PI/180,dx=Math.cos(a)*r,dy=Math.sin(a)*r,x=lf?cx+dx:cx-dx,y=cy-dy;
@@ -875,14 +899,27 @@ function acctMenu(){
   const x=document.getElementById('am1');if(x)x.onclick=()=>{d.remove();closePop(true);adminScreen()};
   document.getElementById('am2').onclick=()=>{d.remove();closePop(true);save=null;acct='';admin=false;loginScreen()};
 }
+function dlg(inner,btns){
+  const old=document.getElementById('dlg');if(old)old.remove();
+  const o=document.createElement('div');o.id='dlg';o.className='dlg';
+  o.innerHTML=`<div class="dbox">${inner}<div class="dbtns">${btns.map((b,i)=>`<button data-i="${i}" class="${b[2]||''}">${b[0]}</button>`).join('')}</div></div>`;
+  document.body.appendChild(o);dlg.btns=btns;
+  document.querySelectorAll('#dlg button').forEach(b=>b.onclick=()=>{if(btns[+b.dataset.i][1](o)!==false)o.remove()});
+}
+function askName(first){
+  const p=P();if(!p)return;
+  dlg(`<div class="dp">${pet(p)}</div><h2>${first?'名前を付けましょう':'名前を変更'}</h2><input id="nmi" maxlength="10" placeholder="名前（10文字まで）" value="${esc(p.name||'')}">`,
+    [[first?'あとで':'キャンセル',()=>{if(first&&!p.name){p.name='ぴーちゃん';persist();home()}},'sub'],
+     ['決定',()=>{const v=document.getElementById('nmi').value.trim();p.name=v||p.name||'ぴーちゃん';persist();SE.ok();home()}]]);
+}
 function home(){
   wide(1);document.body.classList.add('hub');cur='home';clearInterval(petT);closePop(true);
   const ac0=document.getElementById('acm');if(ac0)ac0.remove();
   const who=document.getElementById('who');if(who){who.textContent=acct;who.onclick=()=>{ac();SE.equip();acctMenu()}}
   const egg=!P();
   const care=egg?`<div class="panel" style="text-align:center"><div class="pt" style="justify-content:center">卵</div><p style="margin:0 0 10px;font-size:16px">孵化させると、ランダムな体の色のピープスが生まれます。</p><button class="btn" id="ha">${I.candy}孵化させる（${admin?0:HATCH}）</button></div>`
-   :`<div class="hubgrid"><div class="panel"><div class="pt">ステータス</div><div class="ringw" style="margin:0 auto"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--line)" stroke-width="8"/><circle id="rg" cx="40" cy="40" r="34" fill="none" stroke="var(--btn)" stroke-width="8" stroke-linecap="round" stroke-dasharray="0 214" transform="rotate(-90 40 40)"/></svg><b id="lv"></b></div><div class="nxt" id="nx"></div><small id="fedn"></small></div>
-   <div class="panel"><div class="pt">お世話</div><div class="rbs"><button class="rb" id="fd">${I.candy}<b>あげる</b></button><button class="rb sub" id="pat">${I.paw}<b>撫でる</b></button><button class="rb sub" id="nap">${I.moon}<b>寝かせる</b></button><button class="rb sub" id="rl">${I.leaf}<b id="rlb">野に放つ</b></button></div></div></div>`;
+   :`<div class="hubgrid"><div class="panel"><div class="pt">ステータス</div><button class="sub nmb" id="nm">${esc(P().name||'ぴーちゃん')}${I.pen}</button><div class="ringw" style="margin:0 auto"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke="var(--line)" stroke-width="8"/><circle id="rg" cx="40" cy="40" r="34" fill="none" stroke="var(--btn)" stroke-width="8" stroke-linecap="round" stroke-dasharray="0 214" transform="rotate(-90 40 40)"/></svg><b id="lv"></b></div><div class="nxt" id="nx"></div><small id="fedn"></small></div>
+   <div class="panel"><div class="pt">お世話</div><div class="rbs"><button class="rb sub" id="fd">${I.candy}<b>あげる</b></button><button class="rb sub" id="pat">${I.paw}<b>撫でる</b></button><button class="rb sub" id="nap">${I.moon}<b>寝かせる</b></button><button class="rb sub" id="rl">${I.leaf}<b id="rlb">野に放つ</b></button></div></div></div>`;
   app.innerHTML=`<div class="hubwrap">${roomTabs(1)}${room('tall')}<p id="msg"></p>${care}</div>`;
   paint();bindRooms(home);
   if(egg){
@@ -892,7 +929,7 @@ function home(){
       setTimeout(()=>{
         const e=rollBody(),isNew=!save.dex[e[0]];
         R().pet=makePet(e);save.dex[e[0]]=1;persist();SE.win();home();
-        setTimeout(()=>{fx('spark',8);say(e[1]+'が生まれました'+(isNew?'（図鑑に登録）':''))},60);
+        setTimeout(()=>{fx('spark',8);say(e[1]+'が生まれました'+(isNew?'（図鑑に登録）':''))},60);setTimeout(()=>askName(true),900);
       },1500);
     };
     return;
@@ -910,12 +947,13 @@ function home(){
   document.getElementById('pat').onclick=()=>{ac();SE.squeak();emote('j')};
   document.getElementById('nap').onclick=()=>{ac();SE.zzz();emote('k')};
   const reward=()=>Math.max(1,Math.round(3*(BR[P().bid]||1)+P().fed*.6));
-  let armed=0;
-  document.getElementById('rl').onclick=function(){
-    const lb=document.getElementById('rlb');
-    if(!armed){armed=1;lb.textContent='飴+'+reward()+' 本当に？';this.classList.remove('sub');setTimeout(()=>{armed=0;const b=document.getElementById('rl'),l=document.getElementById('rlb');if(b){l.textContent='野に放つ';b.classList.add('sub')}},4000);return}
-    const rw=reward();R().pet=null;persist();earn(rw);SE.candy();home();say('野に放ちました（飴+'+rw+'）');
+  document.getElementById('rl').onclick=()=>{
+    ac();SE.equip();
+    const rw=reward(),nm=esc(P().name||'ぴーちゃん');
+    dlg(`<div class="dp">${pet(P())}</div><h2>${nm}を野に放ちますか？</h2><p>野に放ったピープスは、そのまま世界を旅してしまうため、今後会うことができません。</p><p>飴 +${rw} がもらえます。</p>`,
+      [['やめる',()=>{SE.flip()},'sub'],['野に放つ',()=>{R().pet=null;persist();earn(rw);SE.candy();home();say('旅立ちました（飴+'+rw+'）')}]]);
   };
+  document.getElementById('nm').onclick=()=>{ac();SE.equip();askName(false)};
   petT=setInterval(tick,3000);
 }
 
